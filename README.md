@@ -56,18 +56,10 @@ To deploy the application:
 
 ## Challenges and Solutions
 
-### Challenge 1: File Upload Handling
+### Challenge : File Upload Handling
 **Problem**: Ensuring the image file is properly sent to the API.
 **Solution**: Used `FormData` in JavaScript to append and send the file securely.
-
-### Challenge 2: API Response Format Variations
-**Problem**: Different APIs return text in various structures.
-**Solution**: Implemented conditional checks to handle multiple response formats.
-
-### Challenge 3: CORS Restrictions
-**Problem**: Some browsers block direct API requests due to CORS policies.
-**Solution**: Used a proxy server to forward API requests securely.
-
+ 
 ## Future Improvements
 
 - Support multiple OCR API providers
