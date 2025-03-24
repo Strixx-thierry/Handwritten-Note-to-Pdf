@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Handwritten Note to PDF</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+
+<body class="bg-slate-100 min-h-screen flex flex-col items-center p-8">
+    <div class="w-full max-w-md bg-white rounded-xl shadow-lg overflow-hidden">
+        <div class="bg-indigo-600 p-6 text-white">
+            <h1 class="text-xl font-bold">Handwritten Note Converter</h1>
+            <p class="text-indigo-100 text-sm">Upload an image to extract and export text</p>
+        </div>
+
+        <div class="p-6 space-y-6">
+            <div class="space-y-2">
+                <label for="imageInput" class="block text-sm font-medium text-gray-700">Upload Image</label>
+                <div class="flex items-center justify-center w-full">
+                    <label
+                        class="flex flex-col w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                        <div class="flex flex-col items-center justify-center pt-7">
+                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                                </path>
+                            </svg>
+                            <p class="pt-1 text-sm text-gray-500">Click to browse or drag and drop</p>
+                        </div>
+                        <input id="imageInput" type="file" class="hidden" accept="image/*" />
+                    </label>
+                </div>
+                <div id="fileInfo" class="text-sm text-gray-500 hidden">
+                    <span id="fileName">No file selected</span>
+                </div>
+            </div>
+
+            <button id="convertBtn"
+                class="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md transition-colors duration-200">
+                Convert to Text
+            </button>
+
+            <div class="space-y-2">
+                <label for="outputText" class="block text-sm font-medium text-gray-700">Converted Text</label>
+                <div class="relative">
+                    <textarea id="outputText" rows="4"
+                        class="block p-3 w-full text-gray-700 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+                        readonly placeholder="Converted text will appear here..."></textarea>
+                    <button id="copyBtn"
+                        class="absolute top-2 right-2 p-1 bg-gray-100 rounded hover:bg-gray-200 text-gray-600">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+                            </path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <button id="exportBtn"
+                class="w-full py-2 px-4 bg-gray-800 hover:bg-gray-900 text-white font-semibold rounded-lg shadow-md transition-colors duration-200"
+                disabled>
+                Export as PDF
+            </button>
+
+            <div id="status" class="text-sm text-center hidden"></div>
+
+            <footer class="bg-red-500 border-t border-gray-300 justify-center">
+               <p > credit: <a href="https://rapidapi.com/serendi/api/pen-to-print-handwriting-ocr">serendi</a></p> 
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const imageInput = document.getElementById('imageInput');
+            const fileInfo = document.getElementById('fileInfo');
+            const fileName = document.getElementById('fileName');
+            const convertBtn = document.getElementById('convertBtn');
+            const outputText = document.getElementById('outputText');
+            const exportBtn = document.getElementById('exportBtn');
+            const copyBtn = document.getElementById('copyBtn');
+            const status = document.getElementById('status');
+
+            // Load jsPDF library dynamically
+            if (!window.jsPDF) {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+                document.head.appendChild(script);
+            }
+
+            imageInput.addEventListener('change', (e) => {
+                if (e.target.files[0]) {
+                    fileName.textContent = e.target.files[0].name;
+                    fileInfo.classList.remove('hidden');
+                    exportBtn.disabled = true;
+                    outputText.value = '';
+                } else {
+                    fileInfo.classList.add('hidden');
+                }
+            });
+
+            convertBtn.addEventListener('click', async () => {
+                const file = imageInput.files[0];
+                if (!file) {
+                    showStatus('Please upload an image first', 'error');
+                    return;
+                }
+
+                showStatus('Converting image...', 'processing');
+
+                const formData = new FormData();
+                formData.append("includeSubScan", "0");
+                formData.append("srcImg", file);
+                formData.append("Session", "string");
+
+                try {
+                    const response = await fetch("https://pen-to-print-handwriting-ocr.p.rapidapi.com/recognize/", {
+                        method: "POST",
+                        headers: {
+                            "x-rapidapi-key": "460f799cf4msh072b11a8246d58dp1e50c5jsn5e4b0e844e1d",
+                            "x-rapidapi-host": "pen-to-print-handwriting-ocr.p.rapidapi.com"
+                        },
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`API Error: ${response.statusText}`);
+                    }
+
+                    const result = await response.json();
+
+                    if (result && result.value) {
+                        outputText.value = result.value;
+                        exportBtn.disabled = false;
+                        showStatus('Conversion completed', 'success');
+                    } else {
+                        outputText.value = '';
+                        exportBtn.disabled = true;
+                        showStatus('No text detected in the image', 'warning');
+                    }
+                } catch (error) {
+                    console.error(error);
+                    showStatus('Error processing image', 'error');
+                }
+            });
+
+            copyBtn.addEventListener('click', () => {
+                if (outputText.value) {
+                    navigator.clipboard.writeText(outputText.value)
+                        .then(() => showStatus('Text copied to clipboard', 'success'))
+                        .catch(() => showStatus('Failed to copy text', 'error'));
+                }
+            });
+
+            exportBtn.addEventListener('click', async () => {
+                if (!outputText.value) {
+                    showStatus('No text to export', 'error');
+                    return;
+                }
+
+                try {
+                    await new Promise((resolve) => {
+                        const checkJsPDF = () => {
+                            if (window.jspdf) {
+                                resolve();
+                            } else {
+                                setTimeout(checkJsPDF, 100);
+                            }
+                        };
+                        checkJsPDF();
+                    });
+
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF();
+                    const splitText = pdf.splitTextToSize(outputText.value, 180);
+                    pdf.text(splitText, 15, 20);
+                    pdf.save("Handwritten_Note.pdf");
+                    showStatus('PDF exported successfully', 'success');
+                } catch (error) {
+                    console.error(error);
+                    showStatus('Error exporting to PDF', 'error');
+                }
+            });
+
+            function showStatus(message, type) {
+                status.textContent = message;
+                status.classList.remove('hidden', 'text-green-600', 'text-red-600', 'text-yellow-600', 'text-blue-600');
+
+                switch (type) {
+                    case 'success':
+                        status.classList.add('text-green-600');
+                        break;
+                    case 'error':
+                        status.classList.add('text-red-600');
+                        break;
+                    case 'warning':
+                        status.classList.add('text-yellow-600');
+                        break;
+                    case 'processing':
+                        status.classList.add('text-blue-600');
+                        break;
+                }
+
+                setTimeout(() => {
+                    status.classList.add('hidden');
+                }, 3000);
+            }
+        });
+    </script>
+    
+</body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.0.2/tesseract.min.js"></script>
+</html>
