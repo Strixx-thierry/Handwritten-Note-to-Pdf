@@ -1,3 +1,5 @@
+[Watch the intro Video]([https://www.loom.com/share/your-video-id](https://www.loom.com/share/06eeaebf77e34c7a87c457094682ae71?sid=e8393111-2b9a-480c-8e60-582775a5dd79))
+
 # OCR Text Recognition
 
 A web application that extracts text from images using an OCR (Optical Character Recognition) API. This application demonstrates API integration, file handling, and text processing.
